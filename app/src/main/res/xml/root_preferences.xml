@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="General">
+
+        <SwitchPreferenceCompat
+            android:key="enable_ipv6"
+            android:title="Enable IPV6 address"
+            android:summary="Server harus mendukung IPv6, kalau tidak koneksi VPN bisa gagal"
+            android:defaultValue="false" />
+
+        <EditTextPreference
+            android:key="socks_local_port"
+            android:title="Socks local port"
+            android:summary="Port default untuk local SOCKS (SSH murni)"
+            android:defaultValue="1080"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="udpgw_port"
+            android:title="UDPGW port"
+            android:summary="Berlaku untuk protokol SOCKS dan SSH (belum dihubungkan ke forwarding UDP)"
+            app:useSimpleSummaryProvider="true" />
+
+        <Preference
+            android:key="hardware_id"
+            android:title="Hardware ID"
+            android:summary="Tap untuk salin"
+            android:selectable="true" />
+
+        <Preference
+            android:key="battery_optimization"
+            android:title="Battery optimization"
+            android:summary="Nonaktifkan optimasi baterai untuk app ini supaya VPN Service tidak dimatikan sistem" />
+
+        <SwitchPreferenceCompat
+            android:key="split_tunnel_enabled"
+            android:title="Split tunnel"
+            android:summary="Izinkan atau larang aplikasi tertentu ikut lewat VPN"
+            android:defaultValue="false" />
+
+        <Preference
+            android:key="split_tunnel_apps"
+            android:title="Pilih aplikasi"
+            android:summary="Aplikasi yang dikecualikan dari VPN"
+            android:dependency="split_tunnel_enabled" />
+
+        <SwitchPreferenceCompat
+            android:key="proxy_tethering_enabled"
+            android:title="Proxy tethering"
+            android:summary="Bagikan koneksi VPN ke hotspot Wi-Fi lewat proxy (belum diimplementasikan penuh)"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="vpn_tethering_root_enabled"
+            android:title="VPN tethering (root)"
+            android:summary="Butuh akses root — belum diimplementasikan di versi ini"
+            android:defaultValue="false"
+            android:enabled="false" />
+
+        <SwitchPreferenceCompat
+            android:key="network_log_enabled"
+            android:title="Network log"
+            android:summary="Catat perubahan jaringan (nama, tipe) di Show logs"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="bypass_lan_enabled"
+            android:title="Bypass LAN route (VPN)"
+            android:summary="Perlu Android 13+. Biarkan trafik ke jaringan lokal (router, webcam) tidak lewat VPN"
+            android:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="DNS">
+
+        <SwitchPreferenceCompat
+            android:key="use_default_network_dns"
+            android:title="Use default network DNS"
+            android:summary="Pakai DNS bawaan jaringan (mobile/wifi) alih-alih DNS di bawah ini"
+            android:defaultValue="false" />
+
+        <EditTextPreference
+            android:key="dns_primary"
+            android:title="DNS primary"
+            android:defaultValue="1.1.1.1"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="dns_secondary"
+            android:title="DNS secondary"
+            android:defaultValue="1.0.0.1"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            android:key="resolve_outbound_externally"
+            android:title="Resolve outbound externally"
+            android:summary="Resolve hostname outbound pakai DNS di atas, bukan DNS jaringan default"
+            android:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Xray options">
+
+        <SwitchPreferenceCompat
+            android:key="fakedns_enabled"
+            android:title="FakeDNS"
+            android:summary="Aktifkan fake IP untuk bantu unblock censorship"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="content_sniffing_enabled"
+            android:title="Content Sniffing"
+            android:summary="Belum tentu berefek di mode TUN app ini (lihat catatan README)"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="allow_insecure_tls"
+            android:title="Allow insecure (TLS)"
+            android:summary="Izinkan sertifikat TLS server tidak terverifikasi"
+            android:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            android:key="enable_mux"
+            android:title="Enable Mux"
+            android:summary="Gabungkan beberapa koneksi TCP dalam satu koneksi untuk kurangi latency handshake"
+            android:defaultValue="false" />
+
+        <EditTextPreference
+            android:key="tcp_xudp_concurrency"
+            android:title="TCP/XUDP Concurrency (value: -1 to 1024)"
+            android:defaultValue="8"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:key="xudp_quic_traffic"
+            android:title="XUDP QUIC traffic"
+            android:entries="@array/xudp_quic_traffic_entries"
+            android:entryValues="@array/xudp_quic_traffic_values"
+            android:defaultValue="reject"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            android:key="enable_fragment"
+            android:title="Enable Fragment"
+            android:defaultValue="false" />
+
+        <EditTextPreference
+            android:key="fragment_packets"
+            android:title="Fragment packets"
+            android:defaultValue="tlshello"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="fragment_length"
+            android:title="Fragment length"
+            android:defaultValue="50-100"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="fragment_interval"
+            android:title="Fragment interval"
+            android:defaultValue="10-20"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="SSH options">
+
+        <SwitchPreferenceCompat
+            android:key="ssh_wakelock_enabled"
+            android:title="WakeLock"
+            android:summary="Jaga device/CPU tetap awake selama SSH Service berjalan"
+            android:defaultValue="true" />
+
+        <EditTextPreference
+            android:key="ssh_reconnect_max_attempt"
+            android:title="Reconnect max attempt"
+            android:defaultValue="100"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="ssh_reconnect_interval_ms"
+            android:title="Reconnection interval (ms)"
+            android:defaultValue="3000"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            android:key="tls_version"
+            android:title="TLS version"
+            android:summary="Hanya berlaku untuk koneksi VLESS/VMess/Trojan"
+            android:entries="@array/tls_version_entries"
+            android:entryValues="@array/tls_version_values"
+            android:defaultValue="Auto" />
+
+        <EditTextPreference
+            android:key="ssh_send_buffer"
+            android:title="Send buffer"
+            android:defaultValue="16384"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="ssh_receive_buffer"
+            android:title="Receive buffer"
+            android:defaultValue="32768"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="HTTP ping">
+
+        <SwitchPreferenceCompat
+            android:key="http_ping_autostart"
+            android:title="Auto start"
+            android:summary="Kirim HTTP request kecil berulang setelah VPN/SSH tersambung, membantu cegah idle/disconnect"
+            android:defaultValue="true" />
+
+        <EditTextPreference
+            android:key="http_ping_address"
+            android:title="Address"
+            android:summary="Berlaku untuk semua fitur ping. Kosong = https://cp.cloudflare.com/generate_204"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Appearance">
+
+        <ListPreference
+            android:key="theme"
+            android:title="Theme"
+            android:entries="@array/theme_entries"
+            android:entryValues="@array/theme_values"
+            android:defaultValue="dark"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

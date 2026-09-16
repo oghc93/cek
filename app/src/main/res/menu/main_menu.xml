@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/actionImportFile"
+        android:title="Import from file"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/actionSortBy"
+        android:title="Sort by"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/actionViewAs"
+        android:title="View as"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/actionPingTool"
+        android:title="Ping tool"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/actionFindSelected"
+        android:title="Find selected"
+        app:showAsAction="never" />
+</menu>

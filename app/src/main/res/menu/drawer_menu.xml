@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="none">
+        <item
+            android:id="@+id/navWhatsMyIp"
+            android:title="What's my IP?"
+            android:icon="@android:drawable/ic_menu_mylocation" />
+        <item
+            android:id="@+id/navHostToIp"
+            android:title="Host to IP"
+            android:icon="@android:drawable/ic_menu_zoom" />
+        <item
+            android:id="@+id/navHostChecker"
+            android:title="Host checker"
+            android:icon="@android:drawable/ic_menu_send" />
+        <item
+            android:id="@+id/navShowLogs"
+            android:title="Show logs"
+            android:icon="@android:drawable/ic_menu_agenda" />
+        <item
+            android:id="@+id/navSettings"
+            android:title="Settings"
+            android:icon="@android:drawable/ic_menu_preferences" />
+        <item
+            android:id="@+id/navAbout"
+            android:title="About"
+            android:icon="@android:drawable/ic_menu_info_details" />
+        <item
+            android:id="@+id/navShare"
+            android:title="Share"
+            android:icon="@android:drawable/ic_menu_share" />
+    </group>
+</menu>

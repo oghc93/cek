@@ -1,0 +1,102 @@
+name: Build debug APK
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------
+      # Tahap 1: build libv2ray.aar (AndroidLibXrayLite) dari source Go via
+      # gomobile. Ini file native yang tidak bisa dibangun tanpa toolchain
+      # Go+NDK, jadi dibangun di sini SETIAP RUN supaya kamu tidak perlu
+      # build manual di komputer sendiri. Langkah-langkah di bawah meniru
+      # persis workflow CI resmi punya AndroidLibXrayLite sendiri
+      # (github.com/2dust/AndroidLibXrayLite/.github/workflows/main.yml)
+      # supaya kecil kemungkinan gagal karena beda cara build.
+      # ------------------------------------------------------------------
+      - name: Checkout AndroidLibXrayLite
+        uses: actions/checkout@v4
+        with:
+          repository: 2dust/AndroidLibXrayLite
+          path: AndroidLibXrayLite
+
+      - name: Setup Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'AndroidLibXrayLite/go.mod'
+
+      - name: Install gomobile
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          log-accepted-android-sdk-licenses: false
+          packages: 'platforms;android-34 build-tools;34.0.0 platform-tools'
+
+      - name: Install NDK
+        run: |
+          echo "y" | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            --install "ndk;27.0.12077973"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
+
+      - name: Build libv2ray.aar
+        working-directory: AndroidLibXrayLite
+        run: |
+          mkdir -p assets data
+          bash gen_assets.sh download
+          cp -v data/*.dat assets/
+          gomobile init
+          go mod tidy
+          gomobile bind -v -androidapi 24 -trimpath -ldflags='-s -w -buildid= -checklinkname=0' ./
+
+      - name: Copy AAR into app
+        run: |
+          mkdir -p app/libs
+          cp -v AndroidLibXrayLite/libv2ray.aar app/libs/libv2ray.aar
+
+      - name: Upload libv2ray.aar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libv2ray-aar
+          path: app/libs/libv2ray.aar
+
+      # ------------------------------------------------------------------
+      # Tahap 2: compile XrayLiteClient sendiri, sekarang libv2ray.aar
+      # sudah ada di app/libs/.
+      # ------------------------------------------------------------------
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Project ini belum menyertakan gradlew (gradle wrapper) supaya repo
+      # ringan. Action di bawah otomatis install Gradle yang dipakai untuk
+      # build, tanpa perlu file wrapper.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xraylite-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

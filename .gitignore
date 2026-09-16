@@ -1,0 +1,20 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.aab
+
+# Kunci signing JANGAN pernah di-commit
+*.jks
+*.keystore
+keystore.properties
+
+# AAR Xray-core besar (>15MB) — sertakan lewat GitHub Release / Git LFS,
+# jangan commit langsung ke repo biasa kalau repo publik & size sensitif
+# app/libs/libv2ray.aar
