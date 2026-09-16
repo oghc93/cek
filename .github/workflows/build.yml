@@ -1,30 +1,29 @@
-from pathlib import Path
-content = """name: Build XrayLiteClient APK
+name: Build debug APK
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
-    branches: ["main"]
-  workflow_dispatch:
-    inputs:
-      create_release:
-        description: "Create GitHub Release with APK"
-        required: true
-        default: true
-        type: boolean
-
-permissions:
-  contents: write
+    branches: [ "main" ]
+  workflow_dispatch: {}
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout project
+      - name: Checkout
         uses: actions/checkout@v4
 
+      # ------------------------------------------------------------------
+      # Tahap 1: build libv2ray.aar (AndroidLibXrayLite) dari source Go via
+      # gomobile. Ini file native yang tidak bisa dibangun tanpa toolchain
+      # Go+NDK, jadi dibangun di sini SETIAP RUN supaya kamu tidak perlu
+      # build manual di komputer sendiri. Langkah-langkah di bawah meniru
+      # persis workflow CI resmi punya AndroidLibXrayLite sendiri
+      # (github.com/2dust/AndroidLibXrayLite/.github/workflows/main.yml)
+      # supaya kecil kemungkinan gagal karena beda cara build.
+      # ------------------------------------------------------------------
       - name: Checkout AndroidLibXrayLite
         uses: actions/checkout@v4
         with:
@@ -34,8 +33,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v5
         with:
-          go-version-file: AndroidLibXrayLite/go.mod
-          cache: true
+          go-version-file: 'AndroidLibXrayLite/go.mod'
 
       - name: Install gomobile
         run: |
@@ -44,30 +42,19 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        shell: bash
-        run: |
-          set -e
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          "$SDKMANAGER" --version
-          yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+        with:
+          log-accepted-android-sdk-licenses: false
+          packages: 'platforms;android-34 build-tools;34.0.0 platform-tools'
 
       - name: Install NDK
-        shell: bash
         run: |
-          set -e
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$SDKMANAGER" "ndk;27.0.12077973"
+          echo "y" | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            --install "ndk;27.0.12077973"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
-          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
       - name: Build libv2ray.aar
         working-directory: AndroidLibXrayLite
-        shell: bash
         run: |
-          set -e
           mkdir -p assets data
           bash gen_assets.sh download
           cp -v data/*.dat assets/
@@ -75,92 +62,42 @@ jobs:
           go mod tidy
           gomobile bind -v -androidapi 24 -trimpath -ldflags='-s -w -buildid= -checklinkname=0' ./
 
-      - name: Copy libv2ray.aar
+      - name: Copy AAR into app
         run: |
-          set -e
           mkdir -p app/libs
           cp -v AndroidLibXrayLite/libv2ray.aar app/libs/libv2ray.aar
 
-      - name: Upload libv2ray artifact
+      - name: Upload libv2ray.aar artifact
         uses: actions/upload-artifact@v4
         with:
           name: libv2ray-aar
           path: app/libs/libv2ray.aar
-          if-no-files-found: error
 
-      - name: Setup JDK 17
+      # ------------------------------------------------------------------
+      # Tahap 2: compile XrayLiteClient sendiri, sekarang libv2ray.aar
+      # sudah ada di app/libs/.
+      # ------------------------------------------------------------------
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
-          cache: gradle
+          java-version: '17'
 
+      # Project ini belum menyertakan gradlew (gradle wrapper) supaya repo
+      # ringan. Action di bawah otomatis install Gradle yang dipakai untuk
+      # build, tanpa perlu file wrapper.
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
+          gradle-version: '8.7'
 
       - name: Build debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
-
-      - name: Locate APK
-        id: apk
-        shell: bash
-        run: |
-          set -e
-          APK="$(find app/build/outputs/apk/debug -type f -name '*.apk' | head -n 1)"
-          if [ -z "$APK" ]; then
-            echo "ERROR: APK tidak ditemukan."
-            find app/build/outputs -maxdepth 5 -type f 2>/dev/null || true
-            exit 1
-          fi
-          ls -lh "$APK"
-          echo "path=$APK" >> "$GITHUB_OUTPUT"
-
-      - name: Verify APK
-        shell: bash
-        run: |
-          set -e
-          APK="${{ steps.apk.outputs.path }}"
-          APKSIGNER="$ANDROID_HOME/build-tools/34.0.0/apksigner"
-          unzip -t "$APK" >/dev/null
-          "$APKSIGNER" verify --verbose "$APK"
-          echo "APK verification successful."
-
-      - name: Prepare APK
-        id: prepare
-        shell: bash
-        run: |
-          set -e
-          mkdir -p release
-          cp "${{ steps.apk.outputs.path }}" "release/XrayLiteClient-OGTunnel-debug.apk"
-          sha256sum "release/XrayLiteClient-OGTunnel-debug.apk" > "release/XrayLiteClient-OGTunnel-debug.apk.sha256"
-          ls -lh release/
-          echo "path=release/XrayLiteClient-OGTunnel-debug.apk" >> "$GITHUB_OUTPUT"
+        run: gradle assembleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: xraylite-debug-apk
-          path: |
-            release/XrayLiteClient-OGTunnel-debug.apk
-            release/XrayLiteClient-OGTunnel-debug.apk.sha256
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-
-      - name: Create GitHub Release
-        if: github.event_name == 'workflow_dispatch' && inputs.create_release == true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -e
-          TAG="v0.1.${{ github.run_number }}"
-          gh release create "$TAG" \
-            "release/XrayLiteClient-OGTunnel-debug.apk" \
-            "release/XrayLiteClient-OGTunnel-debug.apk.sha256" \
-            --title "XrayLiteClient OG Tunnel $TAG" \
-            --notes "Debug APK generated automatically by GitHub Actions."
-"""
-path = Path("/mnt/data/build.yml")
-path.write_text(content, encoding="utf-8")
-print(path)
+          
